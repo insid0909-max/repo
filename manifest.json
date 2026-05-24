@@ -1,0 +1,19 @@
+{
+  "manifest_version": 3,
+  "name": "짭토끼 프리덤 레이어",
+  "version": "1.0.0",
+  "description": "Next.js 데이터 스트림 기반 이미지 뷰어 강제 활성화",
+  "permissions": [
+    "declarativeNetRequest"
+  ],
+  "host_permissions": [
+    "https://sbxh2.com/*"
+  ],
+  "content_scripts": [
+    {
+      "matches": ["https://sbxh2.com/viewer/*"],
+      "js": ["content.js"],
+      "run_at": "document_end"
+    }
+  ]
+}
