@@ -7,6 +7,7 @@ class Sbxh2 {
 
     /**
      * [1] 인기/랭킹 목록 파싱
+     * 표준 규격 명세에 맞춘 메서드 구조입니다.
      */
     async getPopularManga(page) {
         const url = `${this.baseUrl}/?page=${page}`;
@@ -19,7 +20,7 @@ class Sbxh2 {
         const html = response.body;
         const mangaList = [];
 
-        // 무한 루프 방지를 위해 matchAll 스타일로 안전하게 처리
+        // 정규식 매칭 루프 안정화
         const listRegex = /"title":"([^"]+)","url":"([^"]+)","thumbnail":"([^"]+)"/g;
         const matches = html.matchAll(listRegex);
 
@@ -38,7 +39,7 @@ class Sbxh2 {
     }
 
     /**
-     * [2] 에피소드 회차 목록 파싱
+     * [2] 만화 상세 정보 및 에피소드 회차 목록 파싱
      */
     async getMangaDetails(mangaUrl) {
         const response = await http.get(this.baseUrl + mangaUrl, {
@@ -60,13 +61,20 @@ class Sbxh2 {
             });
         }
 
-        return { chapters: chapters.reverse() }; // 최신화 상단 정렬
+        return {
+            manga: {
+                title: "짭토끼 웹툰",
+                description: "자동 파싱 전용 채널"
+            },
+            chapters: chapters.reverse() // 최신화 상단 배치
+        };
     }
 
     /**
-     * [3] 🎯 뷰어 이미지 주소 정밀 추출 (Next.js 가로채기)
+     * [3] 🎯 핵심: 뷰어 이미지 주소 정밀 추출 (Next.js 하이드레이션 가로채기)
+     * 명세서상 메서드 이름은 반드시 'getChapterImageList' 또는 'getPageList' 인터페이스를 준수해야 합니다.
      */
-    async getPageList(chapterUrl) {
+    async getChapterImageList(chapterUrl) {
         const response = await http.get(this.baseUrl + chapterUrl, {
             headers: {
                 "User-Agent": "Mozilla/5.0 (Linux; Android 10; K) AppleWebKit/537.36",
@@ -82,14 +90,14 @@ class Sbxh2 {
         if (nextDataMatch) {
             const dataStream = nextDataMatch[1];
             
-            // 2단계: 이미지 확장자 검사 기만 차단 규칙
+            // 2단계: 이미지 확장자 주소 정밀 추출
             const imgRegex = /https:\/\/[^"'\s\\]+\.(jpg|jpeg|png|webp|gif)/gi;
             const foundImages = dataStream.match(imgRegex) || [];
 
             foundImages.forEach((img) => {
                 const cleanImgUrl = img.replace(/\\/g, '');
 
-                // 트랩 데이터(ad_test, pixel) 원천 배제
+                // 광고 트랩 이미지 필터링
                 if (!cleanImgUrl.includes('ad_test') && 
                     !cleanImgUrl.includes('pixel') && 
                     !pages.some(p => p.url === cleanImgUrl)) {
@@ -106,8 +114,6 @@ class Sbxh2 {
     }
 }
 
-// [교정] 모듈 내보내기 신택스 에러 해결
-// 앱 런타임 환경 엔진이 클래스 인스턴스를 정상적으로 바인딩하도록 처리
-function Ext() {
-    return new Sbxh2();
-}
+// [🔥 최종 교정] 코믹쿠 전용 엔진이 소스를 로드하는 절대 규칙
+// 익스텐션 인스턴스를 반드시 전역 변수 'ext'에 직접 할당해야만 검증을 통과합니다.
+const ext = new Sbxh2();
